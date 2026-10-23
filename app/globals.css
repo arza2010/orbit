@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #05050a;
+  --surface: rgb(255 255 255 / 0.045);
+  --surface-2: rgb(255 255 255 / 0.08);
+  --line: rgb(255 255 255 / 0.09);
+  --text: #f4f4f9;
+  --muted: #a0a0b5;
+  --faint: #6c6c82;
+  --violet: #8b6cff;
+  --cyan: #35e0ff;
+  --pink: #ff5c9d;
+  --lime: #b8ff6a;
+  --amber: #ffb454;
+  --red: #ff6b7a;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-violet: var(--violet);
+  --color-cyan: var(--cyan);
+  --color-pink: var(--pink);
+  --color-lime: var(--lime);
+  --color-amber: var(--amber);
+  --color-danger: var(--red);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgb(139 108 255 / 0.45);
+}
+
+/* ---------- Glass surfaces ---------- */
+@layer components {
+  .glass {
+    position: relative;
+    /* the first layer is a soft light that follows the pointer (set by PointerFx); off-screen until then */
+    background:
+      radial-gradient(420px circle at var(--px, -999px) var(--py, -999px), rgb(255 255 255 / 0.085), transparent 55%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.03));
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 24px 60px -30px rgb(0 0 0 / 0.7);
+  }
+
+  /* With the live shader behind everything, blurring it under every card on every frame is wasted
+     GPU work. A deeper fill gives the same depth for a fraction of the cost. */
+  html[data-gl] .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background:
+      radial-gradient(420px circle at var(--px, -999px) var(--py, -999px), rgb(255 255 255 / 0.1), transparent 55%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.025)),
+      rgb(10 10 20 / 0.58);
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, #fff 10%, #c9bdff 45%, #7fe8ff 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* leans toward the pointer; the lean itself is written by PointerFx */
+  .tilt {
+    transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+}
+
+/* ---------- Live shader background ---------- */
+.shader-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  pointer-events: none;
+}
+html[data-gl] .aurora-orb {
+  display: none;
+}
+
+/* ---------- First-visit intro (CSS only, so it needs no JavaScript to leave) ---------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: grid;
+  place-items: center;
+  background: #05050a;
+  pointer-events: none;
+  animation: intro-out 0.8s cubic-bezier(0.7, 0, 0.2, 1) 1.5s forwards;
+}
+html.intro-seen .intro {
+  display: none;
+}
+.intro-rings {
+  position: absolute;
+  width: min(70vmin, 420px);
+  aspect-ratio: 1;
+}
+.intro-rings span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  animation: intro-ring 1.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.intro-rings span:nth-child(2) { inset: 14%; border-color: rgb(139 108 255 / 0.5); animation-delay: 0.12s; }
+.intro-rings span:nth-child(3) { inset: 28%; border-color: rgb(53 224 255 / 0.5); animation-delay: 0.24s; }
+.intro-dot {
+  position: absolute;
+  width: min(70vmin, 420px);
+  aspect-ratio: 1;
+  animation: intro-spin 1.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.intro-dot::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 22px 6px rgb(139 108 255 / 0.9);
+}
+.intro-word {
+  position: relative;
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: clamp(3rem, 12vmin, 5.5rem);
+  letter-spacing: -0.02em;
+  animation: intro-word 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+@keyframes intro-ring {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes intro-spin {
+  from { transform: rotate(-200deg); opacity: 0; }
+  30% { opacity: 1; }
+  to { transform: rotate(160deg); opacity: 1; }
+}
+@keyframes intro-word {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes intro-out {
+  to { opacity: 0; visibility: hidden; transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro { display: none; }
+}
+
+/* ---------- Aurora backdrop (transform-only animation, no blur filters) ---------- */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora-orb {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.aurora-orb.a {
+  top: -28vmax;
+  left: -18vmax;
+  background: radial-gradient(circle, rgb(139 108 255 / 0.42) 0%, transparent 62%);
+  animation: drift-a 38s ease-in-out infinite;
+}
+
+.aurora-orb.b {
+  bottom: -34vmax;
+  right: -22vmax;
+  background: radial-gradient(circle, rgb(53 224 255 / 0.28) 0%, transparent 62%);
+  animation: drift-b 46s ease-in-out infinite;
+}
+
+.aurora-orb.c {
+  top: 30%;
+  left: 38%;
+  width: 46vmax;
+  height: 46vmax;
+  background: radial-gradient(circle, rgb(255 92 157 / 0.2) 0%, transparent 62%);
+  animation: drift-c 52s ease-in-out infinite;
+}
+
+.aurora-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(14vmax, 10vmax, 0) scale(1.22); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.1); }
+  50% { transform: translate3d(-16vmax, -9vmax, 0) scale(0.9); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(-8vmax, 4vmax, 0) scale(0.9); }
+  50% { transform: translate3d(10vmax, -8vmax, 0) scale(1.2); }
+}
+
+/* ---------- Live pulse ---------- */
+@keyframes ping-soft {
+  0% { transform: scale(1); opacity: 0.6; }
+  80%, 100% { transform: scale(2.6); opacity: 0; }
+}
+.pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: inherit;
+  animation: ping-soft 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+@layer components {
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 16px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.07), transparent);
+  animation: shimmer 1.6s infinite;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-orb,
+  .pulse-dot::after,
+  .skeleton::after {
+    animation: none !important;
+  }
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+/* ---------- Rendered Markdown (class notes) ---------- */
+@layer components {
+  .md { font-size: 0.95rem; line-height: 1.7; color: var(--muted); }
+  .md > :first-child { margin-top: 0; }
+  .md h1 { font-family: var(--font-display); font-size: 2.2rem; line-height: 1.1; color: var(--text); margin: 2rem 0 0.8rem; letter-spacing: -0.01em; }
+  .md h2 { font-family: var(--font-display); font-size: 1.7rem; line-height: 1.15; color: var(--text); margin: 2rem 0 0.7rem; letter-spacing: -0.01em; }
+  .md h3 { font-size: 1.02rem; font-weight: 600; color: var(--text); margin: 1.4rem 0 0.4rem; }
+  .md h4 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin: 1.2rem 0 0.3rem; }
+  .md p { margin: 0.6rem 0; }
+  .md strong { color: var(--text); font-weight: 600; }
+  .md ul, .md ol { margin: 0.5rem 0; padding-left: 1.3rem; }
+  .md ul { list-style: disc; }
+  .md ol { list-style: decimal; }
+  .md li { margin: 0.3rem 0; }
+  .md li::marker { color: var(--faint); }
+  .md a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(53 224 255 / 0.4); }
+  .md code { font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; border-radius: 6px; background: var(--surface-2); color: var(--text); }
+  .md pre { overflow-x: auto; padding: 1rem; border-radius: 14px; background: rgb(0 0 0 / 0.35); border: 1px solid var(--line); }
+  .md pre code { padding: 0; background: none; }
+  .md blockquote { margin: 0.8rem 0; padding: 0.2rem 1rem; border-left: 2px solid var(--violet); color: var(--muted); }
+  .md hr { margin: 1.6rem 0; border-color: var(--line); }
+  .md table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; display: block; overflow-x: auto; }
+  .md th, .md td { text-align: left; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--line); }
+  .md th { color: var(--text); font-weight: 600; }
+}
